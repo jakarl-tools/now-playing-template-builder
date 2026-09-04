@@ -106,11 +106,36 @@ function chipIcon(token: string): string {
   return "";
 }
 
-/** Cover slot. The shipped starter uses the exact `artwork` id. */
-function coverBlock(roleClass: string, pad: string): string {
-  return `<div class="np-dock ${roleClass}">
+/**
+ * Cover slot. The shipped starter uses the exact `artwork` id.
+ * Vinyl mode adds a record that slides out from behind the sleeve and spins,
+ * mirroring the community "vinyl" themes — the disc reserves its slide-out
+ * space up front so nothing jumps when a track lands.
+ */
+function coverBlock(
+  state: BuilderState,
+  roleClass: string,
+  pad: string,
+  slide: "l" | "r"
+): string {
+  const img = `<img id="artwork" src="">`;
+  if (state.artStyle !== "vinyl") {
+    return `<div class="np-dock ${roleClass}">
   <div class="np-art pad-${pad}" id="cover">
-    <img id="artwork" src="">
+    ${img}
+  </div>
+</div>`;
+  }
+  return `<div class="np-dock ${roleClass}">
+  <div class="np-vinyl-wrap vinyl-${slide}" id="np-vinyl">
+    <div class="np-vinyl-disc">
+      <div class="np-vinyl-spin">
+        <div class="np-vinyl-label" id="np-vinyl-label"></div>
+      </div>
+    </div>
+    <div class="np-sleeve" id="cover">
+      ${img}
+    </div>
   </div>
 </div>`;
 }
@@ -210,9 +235,10 @@ export function bodyHtml(state: BuilderState): string {
   const artRight = showArt && layout.art === "right";
   const artTop = showArt && layout.art === "top";
 
-  const artElLeft = artLeft ? coverBlock("dock--l", "l") : "";
-  const artElRight = artRight ? coverBlock("dock--r", "r") : "";
-  const artElTop = artTop ? coverBlock("dock--t", "t") : "";
+  // The record always slides away from the text block.
+  const artElLeft = artLeft ? coverBlock(state, "dock--l", "l", "r") : "";
+  const artElRight = artRight ? coverBlock(state, "dock--r", "r", "l") : "";
+  const artElTop = artTop ? coverBlock(state, "dock--t", "t", "r") : "";
   const panel = state.showCardBackground ? " np-panel" : "";
 
   const textBlock = `
@@ -383,10 +409,9 @@ function onTrackUpdate(track) {
   npSetText('np-length', npTrackLength(track));
 
   // Artwork — identical to the official starter: $('#artwork').attr('src', track.artwork)
+  var url = track.artwork || '';
   var img = npEl('artwork');
   if (img) {
-    var url = track.artwork || '';
-
     /* Chromium blocks "private network" requests: if this page loads from
        localhost:9000, it cannot fetch from 192.168.x.x:9000 unless the server
        explicitly allows PNA (Now Playing does not). Fix: if the artwork URL
@@ -414,14 +439,40 @@ function onTrackUpdate(track) {
     }
   }
 
+  /* Vinyl mode: paint the record label and slide the disc out with a beat of
+     delay so the cover lands first, exactly like the community vinyl themes. */
+  var vw = npEl('np-vinyl');
+  if (vw) {
+    var lab = npEl('np-vinyl-label');
+    if (lab) {
+      lab.style.backgroundImage = url ? ('url("' + String(url).replace(/"/g, '\\"') + '")') : '';
+    }
+    vw.classList.remove('show-vinyl');
+    void vw.offsetWidth; // force reflow so the slide re-plays per track
+    window.clearTimeout(window.npVinylTimer);
+    window.npVinylTimer = window.setTimeout(function () {
+      vw.classList.add('show-vinyl');
+    }, 350);
+  }
+
   npPaint();
 }
 
 /** Called when "Hide After" wants the overlay hidden. */
-function onHide() { npHiddenByApp = true; npPaint(); }
+function onHide() {
+  npHiddenByApp = true;
+  var vw = npEl('np-vinyl');
+  if (vw) vw.classList.remove('show-vinyl'); // record tucks back into sleeve
+  npPaint();
+}
 
 /** Called when "Hide After" wants the overlay shown again. */
-function onShow() { npHiddenByApp = false; npPaint(); }
+function onShow() {
+  npHiddenByApp = false;
+  var vw = npEl('np-vinyl');
+  if (vw && npHasTrack) vw.classList.add('show-vinyl');
+  npPaint();
+}
 
 /* Belt-and-braces: some loaders look these up on window explicitly. */
 window.onTrackUpdate = onTrackUpdate;
@@ -524,6 +575,37 @@ body{font-family:var(--np-font);background:transparent;overflow:hidden}
 #artwork.showArtwork{opacity:1}
 .np-dock.dock--l{margin-right:0}.np-dock.dock--r{margin-left:0}
 .pad-l{margin-right:0}.pad-r{margin-left:0}
+
+/* ---------- vinyl ---------- */
+.np-vinyl-wrap{--np-vinyl-out:calc(var(--np-art-size,150px) * .52);position:relative}
+.np-vinyl-wrap.vinyl-r{padding-right:var(--np-vinyl-out)}
+.np-vinyl-wrap.vinyl-l{padding-left:var(--np-vinyl-out)}
+.np-sleeve{position:relative;z-index:2;width:var(--np-art-size,150px);height:var(--np-art-size,150px);
+  border-radius:var(--np-radii,14px);overflow:hidden;background-color:var(--np-surface);
+  box-shadow:0 18px 46px -18px rgba(0,0,0,.6)}
+.np-vinyl-disc{position:absolute;top:0;left:0;z-index:1;
+  width:var(--np-art-size,150px);height:var(--np-art-size,150px);
+  transform:translateX(0);transition:transform .9s cubic-bezier(.22,.9,.28,1.02);
+  filter:drop-shadow(0 10px 24px rgba(0,0,0,.45))}
+.np-vinyl-wrap.vinyl-l .np-vinyl-disc{left:auto;right:0}
+.np-vinyl-wrap.show-vinyl.vinyl-r .np-vinyl-disc{transform:translateX(var(--np-vinyl-out))}
+.np-vinyl-wrap.show-vinyl.vinyl-l .np-vinyl-disc{transform:translateX(calc(var(--np-vinyl-out) * -1))}
+.np-vinyl-spin{position:absolute;inset:0;border-radius:50%;overflow:hidden;
+  background:
+    conic-gradient(from 20deg, rgba(255,255,255,.10) 0 6%, transparent 6% 44%,
+      rgba(255,255,255,.07) 48% 54%, transparent 54% 100%),
+    repeating-radial-gradient(circle at 50% 50%, #0a0a0d 0 1.5px, #17171d 1.5px 3.5px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  animation:np-spin 2.6s linear infinite;animation-play-state:paused}
+.np-vinyl-wrap.show-vinyl .np-vinyl-spin{animation-play-state:running}
+.np-vinyl-label{position:absolute;top:50%;left:50%;width:38%;height:38%;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background-color:var(--np-accent);background-size:cover;background-position:center;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
+.np-vinyl-label::after{content:"";position:absolute;top:50%;left:50%;width:16%;height:16%;
+  transform:translate(-50%,-50%);border-radius:50%;background:#0a0a0d;
+  box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+@keyframes np-spin{to{transform:rotate(360deg)}}
 
 /* ---------- type ---------- */
 .np-title{margin:0;font-size:var(--np-title,44px);line-height:.98;font-weight:900;

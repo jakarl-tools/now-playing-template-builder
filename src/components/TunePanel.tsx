@@ -2,6 +2,25 @@ import { Section, Slider, Pills } from "./ui";
 
 export type Align = "left" | "center";
 
+function SleeveIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="12" cy="12" r="4" />
+    </svg>
+  );
+}
+
+function VinylIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5.5" opacity=".55" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function TunePanel({
   titleSize,
   artistSize,
@@ -9,12 +28,14 @@ export function TunePanel({
   titleVariant,
   align,
   showArtwork,
+  artStyle,
   onChangeTitleSize,
   onChangeArtistSize,
   onChangeMetaSize,
   onChangeVariant,
   onChangeAlign,
   onChangeArtwork,
+  onChangeArtStyle,
 }: {
   titleSize: number;
   artistSize: number;
@@ -22,12 +43,14 @@ export function TunePanel({
   titleVariant: string;
   align: Align;
   showArtwork: boolean;
+  artStyle: "sleeve" | "vinyl";
   onChangeTitleSize: (n: number) => void;
   onChangeArtistSize: (n: number) => void;
   onChangeMetaSize: (n: number) => void;
   onChangeVariant: (v: string) => void;
   onChangeAlign: (v: Align) => void;
   onChangeArtwork: (v: boolean) => void;
+  onChangeArtStyle: (v: "sleeve" | "vinyl") => void;
 }) {
   return (
     <div className="space-y-5">
@@ -92,6 +115,41 @@ export function TunePanel({
               Now Playing drops the real Rekordbox cover art into the artwork slot.
             </p>
           </div>
+
+          {showArtwork && (
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="mb-2 text-[12px] text-slate-400">Presentation</p>
+              <Pills<"sleeve" | "vinyl">
+                value={artStyle}
+                onChange={onChangeArtStyle}
+                cols={2}
+                options={[
+                  {
+                    value: "sleeve",
+                    label: (
+                      <span className="flex items-center justify-center gap-2">
+                        <SleeveIcon />
+                        Sleeve
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "vinyl",
+                    label: (
+                      <span className="flex items-center justify-center gap-2">
+                        <VinylIcon />
+                        Vinyl
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                Vinyl slides a spinning record out from behind the sleeve on every
+                track change, and tucks it back in when the overlay hides.
+              </p>
+            </div>
+          )}
         </div>
       </Section>
     </div>

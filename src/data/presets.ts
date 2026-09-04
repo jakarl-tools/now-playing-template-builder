@@ -152,6 +152,8 @@ export interface BuilderState {
   layoutId: LayoutId;
   showArtwork: boolean;
   artworkCorner: number;
+  /** "sleeve" = plain cover tile · "vinyl" = record slides out & spins */
+  artStyle: "sleeve" | "vinyl";
 
   // typography
   titleSize: number; // px
@@ -195,6 +197,7 @@ export const defaultState: BuilderState = {
   layoutId: "row-left",
   showArtwork: true,
   artworkCorner: 14,
+  artStyle: "sleeve",
 
   titleSize: 42,
   artistSize: 18,

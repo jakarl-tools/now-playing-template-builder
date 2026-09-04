@@ -212,12 +212,14 @@ export default function App() {
                 titleVariant={state.titleVariant}
                 align={(state.align as Align) || "left"}
                 showArtwork={state.showArtwork}
+                artStyle={state.artStyle}
                 onChangeTitleSize={(v) => patch({ titleSize: v })}
                 onChangeArtistSize={(v) => patch({ artistSize: v })}
                 onChangeMetaSize={(v) => patch({ metaSize: v })}
                 onChangeVariant={(v) => patch({ titleVariant: v })}
                 onChangeAlign={(v) => patch({ align: v })}
                 onChangeArtwork={(v) => patch({ showArtwork: v })}
+                onChangeArtStyle={(v) => patch({ artStyle: v })}
               />
             )}
             {active === "reference" && <ReferencePanel />}
