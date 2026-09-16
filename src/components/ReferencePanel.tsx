@@ -56,11 +56,8 @@ export function ReferencePanel() {
             &quot;Hide After&quot; setting to trigger automatic exits on stream.
           </p>
           <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
-            Appearance &gt; Spectrum wave adds the decorative 40-bar sine-wave
-            animation from the{' '}
-            <a href="https://gist.github.com/karlp-svg/00fb9e16e2064a02e662aac72f69efff"
-              target="_blank" rel="noreferrer" className="text-sky-300 underline underline-offset-2">example theme</a>.
-            {' '}Its gradient follows the accent colour. It is not audio-reactive and
+            Appearance &gt; Spectrum wave adds a decorative 40-bar sine-wave
+            animation. Its gradient follows the accent colour. It is not audio-reactive and
             needs no microphone access. The animation pauses while the overlay is hidden.
             {' '}Choose <em className="not-italic text-slate-300">Bottom up</em> for bars that
             rise from the baseline, or <em className="not-italic text-slate-300">Centre</em> to

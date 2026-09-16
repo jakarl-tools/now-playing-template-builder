@@ -814,7 +814,12 @@ function onTrackUpdate(track) {
     return;
   }
 
-  if (changed && npMotionSettings.animateTrackChanges && !npMotion.isHidden()) {
+  if (changed && npMotionSettings.animateTrackChanges && !npMotion.isHidden()
+      && (npMotionSettings.entrance.effect !== 'none' || npMotionSettings.exit.effect !== 'none')) {
+    // Only tuck the record away when a visible swap will follow. With both
+    // phases at "None" the transition is an instant text swap, so the vinyl
+    // stays slid out instead of tucking in and back for no reason.
+    npStopVinyl();
     npStopVinyl();
     return npMotion.hide().then(function (completed) {
       // Only the newest payload may start an entrance after the old track exits.

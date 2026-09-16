@@ -1,5 +1,4 @@
-/* Decorative 40-bar wave, adapted from the sine + flutter approach in:
- * https://gist.github.com/karlp-svg/00fb9e16e2064a02e662aac72f69efff
+/* Decorative 40-bar wave driven by a sine + flutter model.
  * This is not an audio analyser. Embedded only when the spectrum is enabled.
  */
 function npCreateSpectrum(options) {

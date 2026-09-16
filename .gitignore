@@ -10,5 +10,20 @@ dist/
 .vscode/
 .idea/
 
-# Logs
-npm-debug.log*
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Env / secrets
+.env
+.env.*
+
+# Test and build caches
+coverage/
+.vite/
+
+# Local-only tests — kept on disk, never pushed to GitHub
+tests/

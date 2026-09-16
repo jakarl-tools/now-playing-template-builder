@@ -260,10 +260,12 @@ export function Switch({
   on,
   onChange,
   label,
+  disabled,
 }: {
   on: boolean;
   onChange: (v: boolean) => void;
   label?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -271,9 +273,11 @@ export function Switch({
       role="switch"
       aria-checked={on}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onChange(!on)}
       className={cn(
-        "relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400",
+        "relative h-5 w-9 shrink-0 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400",
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
         on ? "bg-violet-500" : "bg-white/15"
       )}
     >

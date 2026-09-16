@@ -114,6 +114,16 @@ export function AnimationPanel({ value, onChange }: {
   };
   const outSummary =
     settings.exitMode === "reverse" ? `${summary(exit)} (reversed)` : summary(exit);
+  // A mid-stream exit→enter swap needs at least one animated phase. With both
+  // phases at "None" the toggle would promise a transition that cannot play,
+  // so the row is parked — and the runtime always swaps instantly in that case.
+  const trackTransitionAvailable =
+    settings.entrance.effect !== "none" || exit.effect !== "none";
+  const trackTransitionHint = !trackTransitionAvailable
+    ? "Unavailable while entrance and exit are both None"
+    : settings.animateTrackChanges
+      ? "Exit the old track, then bring in the new one"
+      : "Swap the visible text instantly on track change";
 
   return (
     <Section title="Animations" hint="Entrance, exit and item sequencing"
@@ -153,13 +163,17 @@ export function AnimationPanel({ value, onChange }: {
         <div className="space-y-3 border-t border-white/10 pt-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[12px] text-slate-300">Animate track changes</p>
-              <p className="text-[11px] text-slate-500">Exit the old track, then bring in the new one</p>
+              <p className="text-[12px] text-slate-300">Transition between tracks</p>
+              <p className="text-[11px] text-slate-500">{trackTransitionHint}</p>
             </div>
-            <Switch on={settings.animateTrackChanges} label="Animate track changes"
+            <Switch on={settings.animateTrackChanges} label="Transition between tracks"
+              disabled={!trackTransitionAvailable}
               onChange={(animateTrackChanges) => onChange({ ...settings, animateTrackChanges })} />
           </div>
           <p className="text-[11px] leading-relaxed text-slate-500">
+            {trackTransitionAvailable
+              ? "On: the old track exits and the new one enters. Off: the visible text swaps instantly. "
+              : "Needs an entrance or exit effect — with both set to None there is nothing to play, so the text always swaps instantly. "}
             Staging follows the visible items; exit reverses the sequence. Empty fields are skipped.
             Use Show, Hide or Replay Cycle beside Live Preview to try it. Reduced-motion preferences are respected.
           </p>
