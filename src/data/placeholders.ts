@@ -20,20 +20,25 @@
  * Note: this builder intentionally does NOT expose track.beatportUrl,
  * track.spotifyUrl, track.beatportId or track.filePath. OBS browser sources
  * cannot receive mouse input, so link chips would be useless on stream.
+ * It also omits track.currentBpm (live BPM) and the local wall clock —
+ * neither is needed on this overlay.
+ *
+ * The Remix field reads track.remix first, then falls back to track.remixer,
+ * track.remixedBy and track.mix, since the ID3 "remixed by" tag surfaces
+ * under different names depending on the source.
  */
 
 export type PlaceholderKind =
   | "text"
   | "bpm"
   | "key"
-  | "clock"
   | "rating"
   | "length";
 
 export interface Placeholder {
   /** stable id used in builder state */
   token: string;
-  /** property on the track object (null = computed locally, e.g. clock) */
+  /** property on the track object */
   trackProp: string | null;
   label: string;
   hint: string;
@@ -82,6 +87,15 @@ export const PLACEHOLDERS: Placeholder[] = [
     sample: "Peak time weapon",
   },
   {
+    token: "remix",
+    trackProp: "remix",
+    label: "Remix",
+    hint: "Remix/version tag (remix, remixer, mix)",
+    kind: "text",
+    optional: true,
+    sample: "Extended Mix",
+  },
+  {
     token: "bpm",
     trackProp: "bpm",
     label: "BPM",
@@ -89,15 +103,6 @@ export const PLACEHOLDERS: Placeholder[] = [
     kind: "bpm",
     optional: true,
     sample: 126,
-  },
-  {
-    token: "currentBpm",
-    trackProp: "currentBpm",
-    label: "Live BPM",
-    hint: "BPM after pitch fader",
-    kind: "bpm",
-    optional: true,
-    sample: 127.4,
   },
   {
     token: "key",
@@ -125,15 +130,6 @@ export const PLACEHOLDERS: Placeholder[] = [
     kind: "length",
     optional: true,
     sample: 402,
-  },
-  {
-    token: "clock",
-    trackProp: null,
-    label: "Clock",
-    hint: "Local time, updated every second",
-    kind: "clock",
-    optional: false,
-    sample: "23:41",
   },
 ];
 

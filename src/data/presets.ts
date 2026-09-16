@@ -1,3 +1,6 @@
+import { DEFAULT_ANIMATIONS, type AnimationSettings } from "./animations";
+import { DEFAULT_SURFACE_EFFECTS, type SurfaceEffects } from "./surfaces";
+
 /* -------------------------------- fonts ---------------------------------- */
 
 export interface Font {
@@ -91,38 +94,18 @@ export const FONT_IMPORTS: Record<string, string> = {
   system: "",
 };
 
-/* -------------------------------- layouts -------------------------------- */
+/* -------------------------------- layout --------------------------------- */
 
-export type LayoutId = "row-left" | "row-right" | "stack" | "card" | "minimal" | "tagged";
+/** Where the artwork sits relative to the text stack. */
+export type ArtPosition = "left" | "right" | "top" | "bottom";
+/** Horizontal justification of the text. */
+export type TextAlign = "left" | "center" | "right";
 
-export interface LayoutDef {
-  id: LayoutId;
-  name: string;
-  tagline: string;
-  /** how artwork is placed: none | left | right | top | behind */
-  art: "none" | "left" | "right" | "top" | "behind";
-  flexRow: boolean;
-  justify?: string;
-}
-
-export const LAYOUTS: LayoutDef[] = [
-  { id: "row-left", name: "Art Left", tagline: "Artwork tile on the left of the text", art: "left", flexRow: true },
-  { id: "row-right", name: "Art Right", tagline: "Artwork tile on the right", art: "right", flexRow: true },
-  { id: "stack", name: "Stacked", tagline: "Artwork on top, centered text below", art: "top", flexRow: false },
-  { id: "card", name: "Panel", tagline: "Centered chip on a floating panel", art: "top", flexRow: false },
-  { id: "minimal", name: "Minimal", tagline: "Clean tagline — no artwork", art: "none", flexRow: true },
-  { id: "tagged", name: "Badge Row", tagline: "Compact chips under the title", art: "none", flexRow: true, justify: "center" },
-];
-
-export const layoutById = (id: string) =>
-  LAYOUTS.find((l) => l.id === id) ?? LAYOUTS[0];
-
-/* ---------------------------- content controls --------------------------- */
-
-export type Panel = "fields" | "badges";
-
-/** Full mutable state for the builder */
 export type FontMode = "preset" | "google" | "custom";
+
+/** Corner treatment shared by every background surface. */
+export type CornerStyle = "rounded" | "square";
+export type ArtworkShape = CornerStyle | "circle";
 
 export interface BuilderState {
   // appearance
@@ -133,13 +116,28 @@ export interface BuilderState {
   mutedColor: string;
   accentColor: string;
   chipColor: string;
-  artworkColor: string;
 
   // fitted background behind the complete overlay composition
   showCardBackground: boolean;
   cardColor: string;
   cardOpacity: number;
   cardPadding: number;
+  cardCorner: CornerStyle;
+  cardEffects: SurfaceEffects;
+
+  // background plate hugging just the title text
+  showTitleBackground: boolean;
+  titleBgColor: string;
+  titleBgOpacity: number;
+  titleBgCorner: CornerStyle;
+  titleBgEffects: SurfaceEffects;
+
+  // background plate hugging just the artist line
+  showArtistBackground: boolean;
+  artistBgColor: string;
+  artistBgOpacity: number;
+  artistBgCorner: CornerStyle;
+  artistBgEffects: SurfaceEffects;
 
   // fonts
   fontMode: FontMode;
@@ -149,9 +147,31 @@ export interface BuilderState {
   customCss: string;
 
   // layout
-  layoutId: LayoutId;
   showArtwork: boolean;
+  /** left | right | top | bottom (only when artwork is shown) */
+  artPosition: ArtPosition;
+  /** artwork size multiplier, from the automatic/default 1x up to 2x */
+  artworkScale: number;
+  /** vertical alignment when artwork is left/right */
+  artAlignY: "top" | "center" | "bottom";
+  /** horizontal alignment when artwork is top/bottom */
+  artAlignX: "left" | "center" | "right";
   artworkCorner: number;
+  artworkShape: ArtworkShape;
+  /** Accent-coloured divider for left/right artwork layouts. */
+  showArtworkDivider: boolean;
+  /** Width of the accent divider in px (only when shown). */
+  artworkDividerWidth: number;
+  /** Render title + artist on one shared line when they sit together. */
+  combineTitleArtist: boolean;
+  /** Show the previously played track under the current details. */
+  showPrevious: boolean;
+  /** Light pulse travelling around the full-card border. */
+  cardPulse: boolean;
+  /** Sweep direction for the border pulse. */
+  cardPulseDirection: "cw" | "ccw";
+  /** Artist treatment, mirroring the title style options. */
+  artistVariant: "regular" | "italic" | "uppercase";
   /** "sleeve" = plain cover tile · "vinyl" = record slides out & spins */
   artStyle: "sleeve" | "vinyl";
 
@@ -161,18 +181,49 @@ export interface BuilderState {
   /** shared size for everything that isn't the title or artist (tagline + chips) */
   metaSize: number; // px
   titleVariant: string; // regular | italic | uppercase
-  align: string;
+  align: TextAlign;
 
   // accent / surfaces
   showBar: boolean;
+  /** "nested" = NOW PLAYING inside the card · "above" = its own title above the card */
+  livePlacement: LivePlacement;
+
+  // Decorative spectrum under the metadata, independent of artwork style.
+  showSpectrum: boolean;
+  spectrumHeight: number;
+  spectrumSpeed: number;
+  /** "bottom" = bars rise from the baseline · "center" = bars mirror around the middle line */
+  spectrumStyle: SpectrumStyle;
+
+  animation: AnimationSettings;
 
   /** tokens (text fields) visible above the fold */
   shownFields: Record<string, boolean>;
+  /**
+   * For chip-capable tokens only: true = rounded chip, false = plain tagline
+   * text. Tokens absent from this map fall back to chip styling.
+   */
+  chipFields: Record<string, boolean>;
   /** ordering of text fields in the stacked card text block */
   fieldOrder: string[];
   /** draw the small accent dash in front of the artist line */
   artistDash: boolean;
+  /** how the rating renders: "4 ★" numeric, or a 5-star fill bar */
+  ratingStyle: RatingStyle;
 }
+
+/** Rating presentation. */
+export type RatingStyle = "numeric" | "stars";
+
+/**
+ * Where the live "NOW PLAYING" indicator sits.
+ * "nested" — as the first line inside the card's text block (the original).
+ * "above"  — a separate element stacked above the card, outside its background.
+ */
+export type LivePlacement = "nested" | "above";
+
+/** Spectrum growth: from the baseline, or mirrored around the middle line. */
+export type SpectrumStyle = "bottom" | "center";
 
 export const defaultState: BuilderState = {
   fontId: "inter",
@@ -181,12 +232,25 @@ export const defaultState: BuilderState = {
   mutedColor: "#8b93a3",
   accentColor: "#ff5c9b",
   chipColor: "#242733",
-  artworkColor: "#151824",
 
   showCardBackground: false,
   cardColor: "#080a10",
   cardOpacity: 82,
   cardPadding: 24,
+  cardCorner: "rounded",
+  cardEffects: { ...DEFAULT_SURFACE_EFFECTS.card },
+
+  showTitleBackground: false,
+  titleBgColor: "#000000",
+  titleBgOpacity: 70,
+  titleBgCorner: "rounded",
+  titleBgEffects: { ...DEFAULT_SURFACE_EFFECTS.title },
+
+  showArtistBackground: false,
+  artistBgColor: "#000000",
+  artistBgOpacity: 70,
+  artistBgCorner: "rounded",
+  artistBgEffects: { ...DEFAULT_SURFACE_EFFECTS.artist },
 
   fontMode: "preset",
   googleFamily: "Bebas Neue",
@@ -194,9 +258,20 @@ export const defaultState: BuilderState = {
   customStack: "'My Font', 'Inter', sans-serif",
   customCss: "",
 
-  layoutId: "row-left",
   showArtwork: true,
+  artPosition: "left",
+  artworkScale: 1,
+  artAlignY: "center",
+  artAlignX: "center",
   artworkCorner: 14,
+  artworkShape: "rounded",
+  showArtworkDivider: false,
+  artworkDividerWidth: 3,
+  combineTitleArtist: false,
+  showPrevious: false,
+  cardPulse: false,
+  cardPulseDirection: "cw",
+  artistVariant: "uppercase",
   artStyle: "sleeve",
 
   titleSize: 42,
@@ -206,42 +281,53 @@ export const defaultState: BuilderState = {
   align: "left",
 
   showBar: true,
+  livePlacement: "nested",
+
+  showSpectrum: false,
+  spectrumHeight: 30,
+  spectrumSpeed: 1,
+  spectrumStyle: "bottom",
+
+  animation: DEFAULT_ANIMATIONS,
 
   shownFields: {
     title: true,
     artist: true,
     label: true,
     comment: false,
+    remix: false,
     bpm: true,
-    currentBpm: false,
     key: true,
     rating: false,
     length: false,
-    clock: false,
+  },
+  chipFields: {
+    bpm: true,
+    key: true,
+    rating: true,
+    length: true,
   },
   fieldOrder: [
     "title",
     "artist",
     "label",
     "comment",
+    "remix",
     "bpm",
-    "currentBpm",
     "key",
     "rating",
     "length",
-    "clock",
   ],
   artistDash: true,
+  ratingStyle: "numeric",
 };
 
 /** Fields drawn as flowing tagline text. */
-export const TEXT_FIELDS = ["title", "artist", "label", "comment"];
-/** Numeric / tech values — always drawn as chips. */
+export const TEXT_FIELDS = ["title", "artist", "label", "comment", "remix"];
+/** Fields that support either chip or plain-text presentation. */
 export const CHIP_FIELDS = [
   "bpm",
-  "currentBpm",
   "key",
   "rating",
   "length",
-  "clock",
 ];

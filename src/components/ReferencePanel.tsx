@@ -8,13 +8,13 @@ const CONTRACT = `<!-- the contract your theme must honour -->
     document.getElementById('np-title').textContent = track.title;
     document.getElementById('artwork').src = track.artwork;
   }
-  function onHide() { /* "Hide After" elapsed */ }
-  function onShow() { /* visible again */ }
+  function onHide() { /* play the configured exit */ }
+  function onShow() { /* play the configured entrance */ }
 </script>`;
 
 export function ReferencePanel() {
   return (
-    <div className="space-y-5 px-px">
+    <div>
       <Section title="How the data binds" hint="onTrackUpdate(track)">
         <div className="rounded-xl border border-white/10 bg-[#0b0e16] p-3">
           <p className="mb-2 text-[12px] leading-relaxed text-slate-400">
@@ -36,6 +36,11 @@ export function ReferencePanel() {
               matching element id.
             </li>
             <li>
+              • The live “NOW PLAYING” indicator can sit inside the card as its first
+              line, or above the card as a separate title that follows the text
+              alignment. Either way it takes part in the entrance and exit motion.
+            </li>
+            <li>
               • Empty or missing fields hide their element automatically, so optional
               tags never leave gaps or stray separators.
             </li>
@@ -44,10 +49,27 @@ export function ReferencePanel() {
               nothing flashes on stream between tracks.
             </li>
           </ul>
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+            Configure motion in Appearance &gt; Animations. Show and Hide in the preview
+            call the same callbacks as Now Playing. Staged motion skips missing fields;
+            a new track can exit before the next one enters. Enable Now Playing&apos;s
+            &quot;Hide After&quot; setting to trigger automatic exits on stream.
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+            Appearance &gt; Spectrum wave adds the decorative 40-bar sine-wave
+            animation from the{' '}
+            <a href="https://gist.github.com/karlp-svg/00fb9e16e2064a02e662aac72f69efff"
+              target="_blank" rel="noreferrer" className="text-sky-300 underline underline-offset-2">example theme</a>.
+            {' '}Its gradient follows the accent colour. It is not audio-reactive and
+            needs no microphone access. The animation pauses while the overlay is hidden.
+            {' '}Choose <em className="not-italic text-slate-300">Bottom up</em> for bars that
+            rise from the baseline, or <em className="not-italic text-slate-300">Centre</em> to
+            mirror them around the middle line.
+          </p>
         </div>
       </Section>
 
-      <Section title="Track object fields" hint="click to copy">
+      <Section title="Track object fields" hint="Click a field to copy its reference" summary={`${PLACEHOLDERS.length} available fields`}>
         <div className="grid grid-cols-1 gap-1.5">
           {PLACEHOLDERS.map((p) => (
             <TokenRow
@@ -61,7 +83,7 @@ export function ReferencePanel() {
         </div>
       </Section>
 
-      <Section title="Install it" hint="a 20 second walkthrough">
+      <Section title="Install it" hint="From your export to OBS in five steps" defaultOpen>
         <ol className="space-y-2.5">
           {[
             {
