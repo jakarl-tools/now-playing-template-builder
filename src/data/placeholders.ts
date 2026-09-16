@@ -57,7 +57,7 @@ export const PLACEHOLDERS: Placeholder[] = [
     hint: "Track name incl. remix",
     kind: "text",
     optional: false,
-    sample: "Midnight Circuit",
+    sample: "At Night",
   },
   {
     token: "artist",
@@ -66,7 +66,7 @@ export const PLACEHOLDERS: Placeholder[] = [
     hint: "Artist of the track",
     kind: "text",
     optional: false,
-    sample: "Neon District",
+    sample: "Shakedown",
   },
   {
     token: "label",
@@ -75,7 +75,7 @@ export const PLACEHOLDERS: Placeholder[] = [
     hint: "Record label",
     kind: "text",
     optional: true,
-    sample: "Afterdark Records",
+    sample: "Defected Records",
   },
   {
     token: "comment",
@@ -93,7 +93,7 @@ export const PLACEHOLDERS: Placeholder[] = [
     hint: "Remix/version tag (remix, remixer, mix)",
     kind: "text",
     optional: true,
-    sample: "Extended Mix",
+    sample: "Kid Crème Remix",
   },
   {
     token: "bpm",
@@ -129,7 +129,7 @@ export const PLACEHOLDERS: Placeholder[] = [
     hint: "Track duration only (seconds/ms → m:ss)",
     kind: "length",
     optional: true,
-    sample: 402,
+    sample: 485,
   },
 ];
 

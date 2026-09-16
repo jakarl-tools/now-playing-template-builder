@@ -153,7 +153,7 @@ export function TypographyPanel({
                 className="mt-2 truncate rounded-lg bg-black/30 px-3 py-2 text-2xl text-slate-200"
                 style={{ fontFamily: `'${googleFamily}', Inter, sans-serif` }}
               >
-                Midnight Circuit
+                At Night
               </div>
               <p className="mt-2 break-all text-[10px] leading-relaxed text-slate-600">
                 {googleFontUrl(googleFamily, googleWeights) || "— enter a family —"}
@@ -218,7 +218,7 @@ export function TypographyPanel({
                 className="mt-2 truncate rounded-lg bg-black/30 px-3 py-2 text-2xl text-slate-200"
                 style={{ fontFamily: customStack || "inherit" }}
               >
-                Midnight Circuit
+                At Night
               </div>
             </div>
 

@@ -472,16 +472,16 @@ function mockArt(accent: string): string {
 function mockPayload(accent: string): string {
   const track: Record<string, unknown> = {
     id: "mock-1",
-    title: "Midnight Circuit",
-    artist: "Neon District",
+    title: "At Night",
+    artist: "Shakedown",
     artwork: mockArt(accent),
-    label: "Afterdark Records",
+    label: "Defected Records",
     bpm: 126,
     key: "8A",
     rating: 4,
-    length: 402,
+    length: 485,
     comment: "Peak time weapon",
-    remix: "Extended Mix",
+    remix: "Kid Crème Remix",
   };
   return JSON.stringify(track);
 }
@@ -820,7 +820,6 @@ function onTrackUpdate(track) {
     // phases at "None" the transition is an instant text swap, so the vinyl
     // stays slid out instead of tucking in and back for no reason.
     npStopVinyl();
-    npStopVinyl();
     return npMotion.hide().then(function (completed) {
       // Only the newest payload may start an entrance after the old track exits.
       if (!completed || revision !== npTrackRevision || npHiddenByApp) return false;
@@ -907,7 +906,7 @@ window.addEventListener('message', function (event) {
 /* Sample data uses exactly the same callbacks as the exported theme. */
 onTrackUpdate(${mockPayload(state.accentColor)});
 /* Fabricate a previous track so the preview demonstrates the feature. */
-npPreviousTrack = { artist: 'Aurora Lane', title: 'Afterglow' };
+npPreviousTrack = { artist: 'Ferreck Dawn ft Caroline Byrne', title: 'Make Me Weak' };
 npSyncPrevious();
 `
       : ""
