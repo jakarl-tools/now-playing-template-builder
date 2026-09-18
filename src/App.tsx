@@ -177,7 +177,11 @@ export default function App() {
                   artistSize={state.artistSize}
                   metaSize={state.metaSize}
                   titleVariant={state.titleVariant}
+                  titleWeight={state.titleWeight}
+                  titleTracking={state.titleTracking}
                   artistVariant={state.artistVariant}
+                  artistWeight={state.artistWeight}
+                  artistTracking={state.artistTracking}
                   onPatch={patch}
                 />
               )}

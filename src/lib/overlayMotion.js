@@ -21,9 +21,11 @@ function npCreateMotionController(config, notify) {
 
   /*
    * Slide effects are reveals sized by the element itself, so no distance is
-   * configured. Translating 100% of the element's own size while clipping the
-   * very edge it travels from makes those two cancel: the clip edge stays put
-   * in the page while the content emerges through it, growing as it arrives.
+   * configured for them. Translating 100% of the element's own size while
+   * clipping the very edge it travels from makes those two cancel: the clip
+   * edge stays put in the page while the content emerges through it, growing
+   * as it arrives. The deck's own paint has no clip to cancel against, so its
+   * travel is measured instead — see deckShift.
    */
   function revealClip(direction) {
     return direction === 'top' ? 'inset(100% 0% 0% 0%)'
@@ -36,6 +38,43 @@ function npCreateMotionController(config, notify) {
     var x = direction === 'left' ? '-100%' : direction === 'right' ? '100%' : '0';
     var y = direction === 'top' ? '-100%' : direction === 'bottom' ? '100%' : '0';
     return 'translate3d(' + x + ',' + y + ',0)';
+  }
+
+  /*
+   * How far the deck's own paint slides. A content reveal is sized by the
+   * element itself, but the deck has no clip to cancel a percentage against,
+   * so its travel is a free choice — and travelling its whole border box
+   * means a card with large artwork enters from farther away than anything
+   * it presents. The deck instead slides only as far as the widest text
+   * field: each row of the text stack is measured by the union of its own
+   * content, and the spectrum row — which stretches to the card rather than
+   * to text — is skipped. Anything unmeasurable (no text stack, nothing laid
+   * out, no Range support) or a text stack as wide as the card itself falls
+   * back to the element-sized travel. Vertical slides keep the full travel.
+   */
+  function deckShift(node, direction) {
+    var distance = null;
+    try {
+      if (direction === 'left' || direction === 'right') {
+        var own = node.getBoundingClientRect().width;
+        var stack = composition ? composition.querySelector('.np-txt') : null;
+        if (own > 0 && stack && document.createRange) {
+          var range = document.createRange();
+          Array.prototype.forEach.call(stack.children, function (row) {
+            if (row.classList.contains('np-spectrum-row')) return;
+            range.selectNodeContents(row);
+            var extent = range.getBoundingClientRect().width;
+            if (extent > distance) distance = extent;
+          });
+        }
+        if (distance !== null && (distance <= 0 || distance >= own)) distance = null;
+      }
+    } catch (error) {
+      distance = null;
+    }
+    if (distance === null) return revealShift(direction);
+    var px = Math.round(distance);
+    return 'translate3d(' + (direction === 'left' ? -px : px) + 'px,0,0)';
   }
 
   /*
@@ -56,8 +95,10 @@ function npCreateMotionController(config, notify) {
    * clip-path clips an element's painting, box-shadow included, and a shadow
    * lives outside the border box, so a reveal shows it in slices and then
    * snaps it on the instant the animation releases its fill. The deck travels
-   * and fades as one solid piece instead, which also means it fades in
-   * slide-only mode — travelling alone would leave it sitting on screen.
+   * and fades as one solid piece instead — only as far as the widest text
+   * field rather than its full border box (deckShift) — which also means it
+   * fades in slide-only mode, because travelling alone would leave it sitting
+   * on screen.
    *
    * Content items keep the clip reveal, which is sized by the element itself:
    * translating 100% of its own size while clipping the very edge it travels
@@ -67,7 +108,7 @@ function npCreateMotionController(config, notify) {
    * All surfaces share these frames. The staged backdrop is an empty sibling
    * of the content, so transforming it does not transform the content twice.
    */
-  function motionFrames(settings, surface) {
+  function motionFrames(settings, surface, node) {
     var effect = settings.effect;
     var visible = { opacity: 1, transform: 'none', filter: 'none', clipPath: 'none' };
     var hidden = {
@@ -83,7 +124,9 @@ function npCreateMotionController(config, notify) {
         // clip-path only interpolates between matching shape functions.
         visible.clipPath = 'inset(0% 0% 0% 0%)';
       }
-      hidden.transform = revealShift(settings.direction);
+      hidden.transform = surface
+        ? deckShift(node, settings.direction)
+        : revealShift(settings.direction);
     } else if (effect === 'scale') {
       hidden.transform = 'scale(0.86)';
     } else if (effect === 'blur') {
@@ -178,7 +221,7 @@ function npCreateMotionController(config, notify) {
     var waits = [];
     try {
       entries.forEach(function (entry, index) {
-        var ends = motionFrames(settings, entry.surface);
+        var ends = motionFrames(settings, entry.surface, entry.node);
         var from = snapshots[index] || (show ? ends.hidden : ends.visible);
         var to = show ? ends.visible : ends.hidden;
         var animation = entry.node.animate([from, to], {

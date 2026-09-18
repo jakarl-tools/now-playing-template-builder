@@ -56,9 +56,11 @@ export function ReferencePanel() {
             &quot;Hide After&quot; setting to trigger automatic exits on stream.
           </p>
           <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
-            Appearance &gt; Spectrum wave adds a decorative 40-bar sine-wave
+            Appearance &gt; Spectrum wave adds a decorative sine-wave
             animation. Its gradient follows the accent colour. It is not audio-reactive and
             needs no microphone access. The animation pauses while the overlay is hidden.
+            {' '}The bar count follows the card&apos;s width, so a wider card gains bars
+            instead of spacing the same ones further apart.
             {' '}Choose <em className="not-italic text-slate-300">Bottom up</em> for bars that
             rise from the baseline, or <em className="not-italic text-slate-300">Centre</em> to
             mirror them around the middle line.

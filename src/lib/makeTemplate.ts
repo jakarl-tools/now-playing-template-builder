@@ -1,4 +1,4 @@
-import { byToken } from "../data/placeholders";
+﻿import { byToken } from "../data/placeholders";
 import { effectiveExit, resolveAnimationSettings } from "../data/animations";
 import { resolveSurfaceEffects, type BackgroundSurface, type SurfaceEffects } from "../data/surfaces";
 import overlayMotionRuntime from "./overlayMotion.js?raw";
@@ -92,7 +92,16 @@ export function resolveCssVars(state: BuilderState): CssVars {
     "--np-artist-radius": state.artistBgCorner === "square" ? "0px" : "8px",
     "--np-artist-case": state.artistVariant === "uppercase" ? "uppercase" : "none",
     "--np-artist-style": state.artistVariant === "italic" ? "italic" : "normal",
-    "--np-artist-spacing": state.artistVariant === "uppercase" ? ".12em" : "-.01em",
+    // Stroke weight is always explicit.
+    "--np-title-weight": String(state.titleWeight),
+    "--np-artist-weight": String(state.artistWeight),
+    // Tracking: an explicit value wins, otherwise the treatment's own default
+    // (wide for uppercase artist lines, tight everywhere else).
+    "--np-title-spacing": state.titleTracking === null || state.titleTracking === undefined
+      ? "-.018em" : `${state.titleTracking}em`,
+    "--np-artist-spacing": state.artistTracking === null || state.artistTracking === undefined
+      ? (state.artistVariant === "uppercase" ? ".12em" : "-.01em")
+      : `${state.artistTracking}em`,
     "--np-font": f.stack,
     "--np-title": `${state.titleSize}px`,
     "--np-artist": `${state.artistSize}px`,
@@ -223,7 +232,10 @@ function liveRow(state: BuilderState): string {
 /** The example's spectrum sits below the metadata, not in place of artwork. */
 function spectrumBlock(state: BuilderState): string {
   if (!state.showSpectrum) return "";
-  const bars = '<span class="np-spectrum-bar"></span>'.repeat(40);
+  // First-paint seed for the ~400px default row: floor((400 + 3) / 7) bars at
+  // the fixed 4px + 3px pitch. The runtime re-seats the count to the measured
+  // row width immediately, so the seed only needs to avoid a stretched-gap flash.
+  const bars = '<span class="np-spectrum-bar"></span>'.repeat(57);
   // "center" only swaps the transform origin, so the runtime stays identical.
   const grow = state.spectrumStyle === "center" ? " np-spectrum-center" : "";
   return `<div class="np-spectrum-row" data-np-motion aria-hidden="true"><div class="np-spectrum${grow}" id="np-spectrum">${bars}</div></div>`;
@@ -394,7 +406,7 @@ export function bodyHtml(state: BuilderState): string {
   const nestedLive = aboveLive ? "" : liveRow(state);
 
   const textBlock = `
-    <div class="np-txt${alignClass}">
+    <div class="np-txt${alignClass}${state.showSpectrum ? " has-spectrum" : ""}">
       ${nestedLive}
       ${orderedBlocks(state)}
       ${spectrumBlock(state)}
@@ -981,7 +993,12 @@ body{font-family:var(--np-font);background:transparent;overflow:hidden}
 .np-col.align-center{align-items:center}
 .np-col.align-right{align-items:flex-end}
 .np-center{display:flex}
-.np-txt{display:flex;flex-direction:column;min-width:0}
+.np-txt{display:flex;flex-direction:column;min-width:0;position:relative}
+/* The spectrum row is out of the text flow (absolute), so the column's
+   intrinsic width is the text's alone: the wave can never feed its own bar
+   sum back into the panel width (the ratchet that made it overshoot). The
+   padding reserves the wave's vertical space in normal flow instead. */
+.np-txt.has-spectrum{padding-bottom:calc(12px + var(--np-spectrum-height,30px))}
 /* text justification */
 .np-txt.align-center{align-items:center;text-align:center}
 .np-txt.align-right{align-items:flex-end;text-align:right}
@@ -1062,8 +1079,8 @@ body{font-family:var(--np-font);background:transparent;overflow:hidden}
 @keyframes np-spin{to{transform:rotate(360deg)}}
 
 /* ---------- type ---------- */
-.np-title{margin:0;font-size:var(--np-title,44px);line-height:.98;font-weight:900;
-  letter-spacing:-.018em;color:var(--np-text);text-transform:var(--np-case,none);
+.np-title{margin:0;font-size:var(--np-title,44px);line-height:.98;font-weight:var(--np-title-weight,900);
+  letter-spacing:var(--np-title-spacing,-.018em);color:var(--np-text);text-transform:var(--np-case,none);
   font-style:var(--np-style,normal);text-wrap:balance}
 /* background plate hugging just the title text */
 .np-title.has-bg{width:fit-content;max-width:100%;padding:.16em .34em;
@@ -1075,7 +1092,7 @@ body{font-family:var(--np-font);background:transparent;overflow:hidden}
   background:var(--np-artist-bg);border-radius:var(--np-artist-radius,8px);
   border:var(--np-artist-border,0px solid transparent);box-shadow:var(--np-artist-shadow,none)}
 .np-mark{width:22px;height:2px;background:var(--np-accent);border-radius:2px;flex:none}
-.np-artist-row h2{font-size:var(--np-artist,17px);font-weight:600;
+.np-artist-row h2{font-size:var(--np-artist,17px);font-weight:var(--np-artist-weight,600);
   letter-spacing:var(--np-artist-spacing,.12em);text-transform:var(--np-artist-case,uppercase);
   font-style:var(--np-artist-style,normal);color:var(--np-muted);margin:0}
 /* combined title + artist on one baseline-aligned line. The artist adopts the
@@ -1084,8 +1101,8 @@ body{font-family:var(--np-font);background:transparent;overflow:hidden}
 .np-combined{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px}
 .np-combined .np-artist-row{margin-top:0}
 .np-combined .np-mark{display:none}
-.np-combined .np-artist-row h2{font-size:var(--np-title,44px);font-weight:900;
-  letter-spacing:-.018em;line-height:.98}
+.np-combined .np-artist-row h2{font-size:var(--np-title,44px);font-weight:var(--np-title-weight,900);
+  letter-spacing:var(--np-title-spacing,-.018em);line-height:.98}
 .np-combined-sep{flex:none;width:16px;height:2px;border-radius:2px;background:var(--np-accent);
   align-self:center}
 /* previously played track */
@@ -1120,12 +1137,18 @@ body{font-family:var(--np-font);background:transparent;overflow:hidden}
 .np-txt.align-right .np-inline{justify-content:flex-end}
 .np-txt > :first-child{margin-top:0}
 .np-meta-muted.np-hide,.np-inline.np-hide{margin:0}
-/* The fixed-height spectrum never shifts the text or side-artwork sizing. */
-.np-spectrum-row{flex:none;width:100%;min-width:160px;max-width:100%;margin-top:12px;
-  height:var(--np-spectrum-height,30px);align-self:stretch}
+/* The spectrum row's width feeds the runtime's bar count (fixed 7px pitch:
+   4px bar + 3px gap), so the gap never stretches — extra width means more
+   bars, not wider gaps. space-between seats the end bars on the row edges
+   and spreads the sub-pixel leftover across the gaps, so the wave reaches
+   the text edges exactly. Absolute + both insets keeps it out of the text
+   stack's intrinsic sizing, so its width is exactly the rendered text width
+   and can never ratchet the panel wider than the words above it. */
+.np-spectrum-row{position:absolute;left:0;right:0;bottom:0;
+  height:var(--np-spectrum-height,30px)}
 .np-spectrum{display:flex;align-items:flex-end;justify-content:space-between;
-  column-gap:0.5%;height:100%;width:100%;overflow:hidden;direction:ltr}
-.np-spectrum-bar{display:block;flex:1 1 0;min-width:0;max-width:4px;height:100%;
+  column-gap:3px;height:100%;width:100%;overflow:hidden;direction:ltr}
+.np-spectrum-bar{display:block;flex:0 0 4px;width:4px;height:100%;
   border-radius:2px;background:linear-gradient(to top,var(--np-spectrum-low),var(--np-accent) 55%,var(--np-spectrum-high));
   transform:scaleY(.1);transform-origin:center bottom;transition:transform .1s ease}
 /* Centre style: the same scaleY grows each bar outwards from the middle line, with the

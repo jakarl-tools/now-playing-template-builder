@@ -316,7 +316,7 @@ export function StyleControls({
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[12px] text-slate-300">Show spectrum wave</p>
-              <p className="text-[11px] text-slate-500">40 bars in your accent gradient</p>
+              <p className="text-[11px] text-slate-500">Bars follow the card width, in your accent gradient</p>
             </div>
             <Switch
               on={!!state.showSpectrum}

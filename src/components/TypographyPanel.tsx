@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import {
   FONTS,
   GOOGLE_SUGGESTIONS,
@@ -50,6 +50,97 @@ function useCustomFontPreview(css: string, enabled: boolean) {
   }, [css, enabled]);
 }
 
+/** Tracking defaults, mirrored from resolveCssVars in makeTemplate.ts. */
+const TITLE_TRACKING_DEFAULT = -0.018;
+const artistTrackingDefault = (variant: "regular" | "italic" | "uppercase") =>
+  variant === "uppercase" ? 0.12 : -0.01;
+
+/** Font-size slider, shared by the title, artist and detail sections. */
+function ScaleRow({
+  label,
+  ariaLabel,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  ariaLabel: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[12px] text-slate-400">{label}</span>
+      <Slider min={min} max={max} step={1} value={value} suffix="px" label={ariaLabel} onChange={onChange} />
+    </div>
+  );
+}
+
+/** Stroke-weight slider, 100–900. */
+function WeightRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[12px] text-slate-400">{label}</span>
+      <Slider min={100} max={900} step={50} value={value} label={label} onChange={onChange} />
+    </div>
+  );
+}
+
+/**
+ * Letter-spacing slider. `value` null means "follow the style default", which
+ * keeps the built-in tracking until the user actually drags the slider.
+ */
+function TrackingRow({
+  label,
+  value,
+  autoValue,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  autoValue: number;
+  onChange: (v: number | null) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-[12px] text-slate-400">{label}</span>
+      <div className="flex items-center gap-2">
+        <Slider
+          min={-0.1}
+          max={0.4}
+          step={0.002}
+          value={value ?? autoValue}
+          suffix="em"
+          label={label}
+          onChange={onChange}
+        />
+        {value !== null && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            title="Reset to the style default"
+            aria-label={`Reset ${label} to the style default`}
+            className="text-[10px] font-medium uppercase tracking-wide text-slate-500 transition hover:text-slate-300"
+          >
+            Auto
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function TypographyPanel({
   fontMode,
   fontId,
@@ -61,7 +152,11 @@ export function TypographyPanel({
   artistSize,
   metaSize,
   titleVariant,
+  titleWeight,
+  titleTracking,
   artistVariant,
+  artistWeight,
+  artistTracking,
   onPatch,
 }: {
   fontMode: FontMode;
@@ -74,7 +169,15 @@ export function TypographyPanel({
   artistSize: number;
   metaSize: number;
   titleVariant: string;
+  /** Stroke weight, 100–900. */
+  titleWeight: number;
+  /** null = the built-in default tracking. */
+  titleTracking: number | null;
   artistVariant: "regular" | "italic" | "uppercase";
+  /** Stroke weight, 100–900. */
+  artistWeight: number;
+  /** null = tracking derived from the artist style. */
+  artistTracking: number | null;
   onPatch: (p: {
     fontMode?: FontMode;
     fontId?: string;
@@ -86,7 +189,11 @@ export function TypographyPanel({
     artistSize?: number;
     metaSize?: number;
     titleVariant?: string;
+    titleWeight?: number;
+    titleTracking?: number | null;
     artistVariant?: "regular" | "italic" | "uppercase";
+    artistWeight?: number;
+    artistTracking?: number | null;
   }) => void;
 }) {
   useGoogleFontPreview(googleFamily, googleWeights, fontMode === "google");
@@ -253,58 +360,18 @@ export function TypographyPanel({
       </Section>
 
       <Section
-        title="Sizing"
-        hint="Independent sizes for each text level"
-        summary={`Title ${titleSize}px / Artist ${artistSize}px / Detail ${metaSize}px`}
-      >
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-slate-400">Title scale</span>
-            <Slider
-              min={10}
-              max={100}
-              step={1}
-              value={titleSize}
-              suffix="px"
-              label="Title font size"
-              onChange={(titleSize) => onPatch({ titleSize })}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-slate-400">Artist scale</span>
-            <Slider
-              min={10}
-              max={100}
-              step={1}
-              value={artistSize}
-              suffix="px"
-              label="Artist font size"
-              onChange={(artistSize) => onPatch({ artistSize })}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-slate-400">Detail scale</span>
-            <Slider
-              min={10}
-              max={34}
-              value={metaSize}
-              suffix="px"
-              label="Detail font size"
-              onChange={(metaSize) => onPatch({ metaSize })}
-            />
-          </div>
-          <p className="px-1 text-[11px] leading-relaxed text-slate-500">
-            Detail controls every non‑title/non‑artist block: the tagline line, the
-            "NOW PLAYING" label and all chips together.
-          </p>
-        </div>
-      </Section>
-
-      <Section
         title="Title style"
-        hint="Treatment of the track title"
-        summary={titleVariant === "italic" ? "Italic" : titleVariant === "uppercase" ? "Uppercase" : "Regular"}
+        hint="Size, treatment and spacing of the track title"
+        summary={`${titleSize}px · ${titleVariant === "italic" ? "Italic" : titleVariant === "uppercase" ? "Uppercase" : "Regular"} · ${titleWeight}${titleTracking === null ? "" : ` · ${titleTracking}em`}`}
       >
+        <ScaleRow
+          label="Scale"
+          ariaLabel="Title font size"
+          value={titleSize}
+          min={10}
+          max={100}
+          onChange={(titleSize) => onPatch({ titleSize })}
+        />
         <Pills
           value={titleVariant}
           cols={3}
@@ -315,13 +382,34 @@ export function TypographyPanel({
             { value: "uppercase", label: "Uppercase" },
           ]}
         />
+        <WeightRow
+          label="Weight"
+          value={titleWeight}
+          onChange={(titleWeight) => onPatch({ titleWeight })}
+        />
+        <TrackingRow
+          label="Letter spacing"
+          value={titleTracking}
+          autoValue={TITLE_TRACKING_DEFAULT}
+          onChange={(v) =>
+            onPatch({ titleTracking: v === null ? null : Math.round(v * 1000) / 1000 })
+          }
+        />
       </Section>
 
       <Section
         title="Artist style"
-        hint="Treatment of the artist line"
-        summary={artistVariant === "italic" ? "Italic" : artistVariant === "uppercase" ? "Uppercase" : "Regular"}
+        hint="Size, treatment and spacing of the artist line"
+        summary={`${artistSize}px · ${artistVariant === "italic" ? "Italic" : artistVariant === "uppercase" ? "Uppercase" : "Regular"} · ${artistWeight}${artistTracking === null ? "" : ` · ${artistTracking}em`}`}
       >
+        <ScaleRow
+          label="Scale"
+          ariaLabel="Artist font size"
+          value={artistSize}
+          min={10}
+          max={100}
+          onChange={(artistSize) => onPatch({ artistSize })}
+        />
         <Pills
           value={artistVariant}
           cols={3}
@@ -332,9 +420,41 @@ export function TypographyPanel({
             { value: "uppercase", label: "Uppercase" },
           ]}
         />
+        <WeightRow
+          label="Weight"
+          value={artistWeight}
+          onChange={(artistWeight) => onPatch({ artistWeight })}
+        />
+        <TrackingRow
+          label="Letter spacing"
+          value={artistTracking}
+          autoValue={artistTrackingDefault(artistVariant)}
+          onChange={(v) =>
+            onPatch({ artistTracking: v === null ? null : Math.round(v * 1000) / 1000 })
+          }
+        />
         <p className="px-1 text-[11px] leading-relaxed text-slate-500">
           When title and artist are combined, the artist borrows the title&apos;s
-          size and weight so the pair reads as one line.
+          size, weight and spacing so the pair reads as one line.
+        </p>
+      </Section>
+
+      <Section
+        title="Detail"
+        hint="Size of the tagline, label and chips"
+        summary={`${metaSize}px`}
+      >
+        <ScaleRow
+          label="Scale"
+          ariaLabel="Detail font size"
+          value={metaSize}
+          min={10}
+          max={34}
+          onChange={(metaSize) => onPatch({ metaSize })}
+        />
+        <p className="px-1 text-[11px] leading-relaxed text-slate-500">
+          Controls every non‑title/non‑artist block: the tagline line, the
+          "NOW PLAYING" label and all chips together.
         </p>
       </Section>
     </div>

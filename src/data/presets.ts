@@ -181,6 +181,20 @@ export interface BuilderState {
   /** shared size for everything that isn't the title or artist (tagline + chips) */
   metaSize: number; // px
   titleVariant: string; // regular | italic | uppercase
+  /** Title stroke weight, 100–900. */
+  titleWeight: number;
+  /** Artist stroke weight, 100–900. */
+  artistWeight: number;
+  /**
+   * Title letter-spacing in em. null keeps the built-in -.018em default, so
+   * existing themes render exactly as before.
+   */
+  titleTracking: number | null;
+  /**
+   * Artist letter-spacing in em. null follows the artist style: wide tracking
+   * for the uppercase treatment, tight for regular/italic.
+   */
+  artistTracking: number | null;
   align: TextAlign;
 
   // accent / surfaces
@@ -272,12 +286,16 @@ export const defaultState: BuilderState = {
   cardPulse: false,
   cardPulseDirection: "cw",
   artistVariant: "uppercase",
+  artistWeight: 600,
+  artistTracking: null,
   artStyle: "sleeve",
 
   titleSize: 42,
-  artistSize: 18,
+  artistSize: 30,
   metaSize: 15,
   titleVariant: "regular",
+  titleWeight: 900,
+  titleTracking: null,
   align: "left",
 
   showBar: true,
